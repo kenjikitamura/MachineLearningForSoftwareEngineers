@@ -123,6 +123,24 @@ object LeastSquaresMethod {
     for (i <- 0 to 9) {
       println(s"i=$i rms_error=${errorM(i)} ans_error=${anserrorM(i)}")
     }
+
+    val f = Figure()
+    val p = f.subplot(0)
+
+    val lis = ( 0.0 to 1.0 by 0.111111111).toList;
+    var i = -1
+    val lis2 = lis.map{v =>
+      i = i + 1
+      errorM(i)
+    }
+    i = -1
+    val lis3 = lis.map{v =>
+      i = i + 1
+      anserrorM(i)
+    }
+    p += plot(lis, lis2,'.') // 観測値の点
+    p += plot(lis, lis3,'.') // 観測値の点
+    f.saveas("lines.png")
   }
 
   /** 平方根平均二乗誤差を計算
