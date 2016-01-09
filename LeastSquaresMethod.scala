@@ -8,7 +8,12 @@ import breeze.numerics._
 object LeastSquaresMethod {
   def main(args: Array[String]):Unit = {
     //val t = Array(1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0)
-    val t = new Matrix(10,1)
+
+    // 観測値
+    val t = new Matrix(10, 1)
+
+    // 答えの関数
+    val ans = new Matrix(10, 1)
     val xM = new Matrix(10, 1)
     var l = 0
     for (value <- 0.0 to 1.0 by 0.11111) {
@@ -19,25 +24,13 @@ object LeastSquaresMethod {
     // 正規分布誤差と正弦関数を用いてテストデータの作成
     var norm = new NormalDistribution(0,0.3);
     l = 0
-    //for(i <- 0.0 to 1.0 by 0.111) {
     for(i <- 0 until 10) {
       t(l) = Math.sin(xM(i) * Math.PI * 2) + norm.sample
+      ans(l) = Math.sin(xM(i) * Math.PI * 2)
       l += 1
     }
     val M = 10
-    val N = t.height
-    var phi = new Matrix(N, M)
-    for {
-      m <- 0 to N-1
-      n <- 0 to M-1
-    } yield {
-      phi(m, n) = Math.pow(0.111111*m,n)
-    }
-
-    println(" -- phi --")
-    println(phi)
-    println(" -- (phiT dot phi)inv")
-    val w = (phi.T dot phi).inv dot phi.T dot t
+    val w = compute_w(M, t)
 
     // 最小二乗法によって得た多項式のグラフを描画するための関数
     val func_result = (x: Double) => {
@@ -84,12 +77,53 @@ object LeastSquaresMethod {
     p += plot(lis, lis2,'.') // 観測値の点
 
     // 誤差の算出
-    val error = rms_error(func_result, xM, t)
-    println(s"rms_error=$error")
-
+    compute_rms_error(xM, t, ans)
     f.saveas("lines.png")
   }
 
+  /**
+    * wの計算
+    */
+  def compute_w(M: Int, t: Matrix): Matrix = {
+    val N = t.height
+    var phi = new Matrix(N, M)
+    for {
+      m <- 0 to N-1
+      n <- 0 to M-1
+    } phi(m, n) = Math.pow(0.111111*m,n)
+
+    println(" -- phi --")
+    println(phi)
+    println(" -- (phiT dot phi)inv")
+    val w = (phi.T dot phi).inv dot phi.T dot t
+    w
+  }
+
+  /**
+    * Mを変えて最小二乗誤差を計算
+    */
+  def compute_rms_error(xM: Matrix, t: Matrix, ans:Matrix) {
+    val errorM = new Matrix(10, 1)
+    val anserrorM = new Matrix(10, 1)
+    for (M <- 1 to 10) {
+      val w = compute_w(M, t)
+      val func_result = (x: Double) => {
+        var y = 0.0
+          (0 until M).foreach({ i =>
+            y += (w(i) * Math.pow(x, i))
+          })
+        y
+      }
+      val error = rms_error(func_result, xM, t)
+      val ans_error = rms_error(func_result, xM, ans)
+      errorM(M-1) = error
+      anserrorM(M-1) = ans_error
+    }
+
+    for (i <- 0 to 9) {
+      println(s"i=$i rms_error=${errorM(i)} ans_error=${anserrorM(i)}")
+    }
+  }
 
   /** 平方根平均二乗誤差を計算
     * f: Double => Double 多項式の関数
