@@ -103,15 +103,15 @@ class Matrix(val m: Int,val n: Int) {
   }
 
   def swapLine(line1: Int, line2: Int) {
-    println(s"Before Swap")
-    println(this)
+    //println(s"Before Swap")
+    //println(this)
     for (n <- 0 until width) {
       val tmp = this(line1, n)
       this(line1, n) = this(line2, n)
       this(line2, n) = tmp
     }
-    println(s"After Swap")
-    println(this)
+    //println(s"After Swap")
+    //println(this)
   }
 
   def copy(): Matrix = {

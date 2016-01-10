@@ -25,31 +25,15 @@ object LeastSquaresMethod {
     var norm = new NormalDistribution(0,0.3);
     l = 0
     for(i <- 0 until 10) {
+      // 観測値
       t(l) = Math.sin(xM(i) * Math.PI * 2) + norm.sample
+
+      // 答えのサインカーブ
       ans(l) = Math.sin(xM(i) * Math.PI * 2)
       l += 1
     }
-    val M = 10
-    val w = compute_w(M, t)
-
-    // 最小二乗法によって得た多項式のグラフを描画するための関数
-    val func_result = (x: Double) => {
-      var y = 0.0
-      (0 until M).foreach({ i =>
-        y += (w(i) * Math.pow(x, i))
-      })
-      y
-    }
-    val func = (i: DenseVector[Double]) => {
-      i.map{func_result(_)}
-    }
-
-    // 正弦関数のグラフを描画するための関数
-    val sinfunc = (i: DenseVector[Double]) => {
-      i.map{x =>
-        Math.sin(x * 2 * Math.PI)
-      }
-    }
+    val w4 = compute_w(4, t)
+    val w10 = compute_w(10, t)
 
     // 観測値ベクトル出力
     println(" -- t --")
@@ -57,13 +41,41 @@ object LeastSquaresMethod {
 
     // 多項式の係数ベクトル出力
     println(" -- w --")
-    println(w)
+    println(w4)
+
+    showGraph(w4, t, "最小二乗法 M=3")
+    showGraph(w10, t, "最小二乗法 M=9")
+
+    // 誤差の算出
+    compute_rms_error(xM, t, ans)
+  }
+
+  def showGraph(w: Matrix, t: Matrix, name: String = ""): Unit = {
+    // 正弦関数のグラフを描画するための関数
+    val sinfunc = (i: DenseVector[Double]) => {
+      i.map{x =>
+        Math.sin(x * 2 * Math.PI)
+      }
+    }
+
+    // 最小二乗法によって得た多項式のグラフを描画するための関数
+    val func_result = (x: Double, w: Matrix) => {
+      var y = 0.0
+      (0 until w.height).foreach({ i =>
+        y += (w(i) * Math.pow(x, i))
+      })
+      y
+    }
+    val func = (i: DenseVector[Double], w: Matrix) => {
+      i.map{func_result(_, w)}
+    }
+
 
     // グラフの描画
-    val f = Figure()
+    val f = Figure(name)
     val p = f.subplot(0)
     val x = linspace(0.0,1.0)
-    p += plot(x, func(x))    // 多項式のグラフ
+    p += plot(x, func(x, w))    // 多項式のグラフ
     p += plot(x, sinfunc(x)) // 正弦関数のグラフ
     p.xlabel = "x axis"
     p.ylabel = "y axis"
@@ -75,10 +87,6 @@ object LeastSquaresMethod {
       t(i)
     }
     p += plot(lis, lis2,'.') // 観測値の点
-
-    // 誤差の算出
-    compute_rms_error(xM, t, ans)
-    f.saveas("lines.png")
   }
 
   /**
@@ -140,7 +148,6 @@ object LeastSquaresMethod {
     }
     p += plot(lis, lis2,'.') // 観測値の点
     p += plot(lis, lis3,'.') // 観測値の点
-    f.saveas("lines.png")
   }
 
   /** 平方根平均二乗誤差を計算
@@ -152,10 +159,9 @@ object LeastSquaresMethod {
     var sum = 0d
     for (i <- 0 until xM.height) {
       val diff = f(xM(i)) - yM(i)
-      println(s"diff=$diff")
+      //println(s"diff=$diff")
       sum += diff * diff
     }
     sum / xM.height
   }
-
 }
