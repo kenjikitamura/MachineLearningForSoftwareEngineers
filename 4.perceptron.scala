@@ -6,7 +6,7 @@ import breeze.numerics._
   * パーセプトロン
   */
 object Perceptron {
-  val bias = 1
+  var bias = 1.0
 
   def main(args: Array[String]):Unit = {
 
@@ -41,6 +41,17 @@ object Perceptron {
     ty(4) = -35
     tType(4) = 1
 
+    // バイアスをすべてのx,yの平均値
+    bias = 0
+    for (i <- 0 until tx.height) {
+      bias += tx(i)
+      bias += ty(i)
+    }
+    bias /= tx.height * 2
+    // 平均値なら2回で収束！ 1なら13回で収束
+
+    println(s"bias=$bias")
+
     val w = new Matrix(3, 1)
     w(0) = 0
     w(1) = 0
@@ -52,7 +63,9 @@ object Perceptron {
       w(0) + x * w(1) + y * w(2)
     }
 
+    var count = 0
     for (loop <- 0 until 30) {
+      var finished = true
       for (i <- 0 until N) {
         val x = tx(i)
         val y = ty(i)
@@ -61,11 +74,16 @@ object Perceptron {
           w(0) += value * bias
           w(1) += value * x
           w(2) += value * y
+          finished = false
         }
+      }
+      if (!finished) {
+        count += 1
       }
     }
 
-    println(s"w=$w")
+    println(s"w=$w $count で収束")
+    // biasが1なら13回
 
     //compute_rms_error(xM, t, ans)
     showGraph(w, null, tx, ty, tType)
