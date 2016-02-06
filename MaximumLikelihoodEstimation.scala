@@ -3,9 +3,9 @@ import breeze.plot._
 import org.apache.commons.math3.distribution.NormalDistribution
 import breeze.numerics._
 /**
-  * 最小二乗法
+  * 最尤推定方
   */
-object LeastSquaresMethod {
+object MaxinumLikelihoodEstimation {
   def main(args: Array[String]):Unit = {
     //val t = Array(1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0)
 
@@ -43,14 +43,14 @@ object LeastSquaresMethod {
     println(" -- w --")
     println(w4)
 
-    showGraph(w4, t, "最小二乗法 M=3")
-    showGraph(w10, t, "最小二乗法 M=9")
+    showGraph(w4, xM, t, "最尤推定法 M=3")
+    //showGraph(w10, xM, t, "最小二乗法 M=9")
 
     // 誤差の算出
     compute_rms_error(xM, t, ans)
   }
 
-  def showGraph(w: Matrix, t: Matrix, name: String = ""): Unit = {
+  def showGraph(w: Matrix, xM: Matrix, t: Matrix, name: String = ""): Unit = {
     // 正弦関数のグラフを描画するための関数
     val sinfunc = (i: DenseVector[Double]) => {
       i.map{x =>
@@ -66,16 +66,27 @@ object LeastSquaresMethod {
       })
       y
     }
-    val func = (i: DenseVector[Double], w: Matrix) => {
-      i.map{func_result(_, w)}
+    val func = (i: DenseVector[Double], w: Matrix, sigma: Double) => {
+      i.map{func_result(_, w) + sigma}
     }
+
+    val sigma = rms_error(
+      (x: Double) => {
+        var y = 0.0
+          (0 until w.height).foreach({ i =>
+            y += (w(i) * Math.pow(x, i))
+          })
+        y
+      }, xM, t)
 
 
     // グラフの描画
-    val f = Figure(name)
+    val f = Figure(name+ " σ="+sigma)
     val p = f.subplot(0)
     val x = linspace(0.0,1.0)
-    p += plot(x, func(x, w))    // 多項式のグラフ
+    p += plot(x, func(x, w, 0))    // 多項式のグラフ
+    p += plot(x, func(x, w, sigma), '.')    // +sigma
+    p += plot(x, func(x, w, -sigma), '.')   // -sigma
     p += plot(x, sinfunc(x)) // 正弦関数のグラフ
     p.xlabel = "x axis"
     p.ylabel = "y axis"
@@ -86,7 +97,7 @@ object LeastSquaresMethod {
       i = i + 1
       t(i)
     }
-    p += plot(lis, lis2,'.') // 観測値の点
+    p += plot(lis, lis2,'+') // 観測値の点
   }
 
   /**
@@ -156,11 +167,12 @@ object LeastSquaresMethod {
     */
   def rms_error(f: Double => Double, xM: Matrix, yM: Matrix):Double = {
     var sum = 0d
+    println(s"xM=$xM yM=$yM")
     for (i <- 0 until xM.height) {
       val diff = f(xM(i)) - yM(i)
       //println(s"diff=$diff")
       sum += diff * diff
     }
-    sum / xM.height
+    sqrt(sum / xM.height)
   }
 }

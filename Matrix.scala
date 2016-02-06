@@ -30,6 +30,14 @@ class Matrix(val m: Int,val n: Int) {
     tM
   }
 
+  def toList(): List[Double] = {
+    val retList = for (i <- 0 until m) yield
+    {
+      apply(i)
+    }
+    retList.toList
+  }
+
   def dot(M: Matrix): Matrix = {
     if (this.width != M.height) throw new RuntimeException(s"縦横サイズが一致していません!  this.height=${this.height} this.width=${this.width} M.height=${M.height} M.width=${M.width}")
     val rM = new Matrix(this.height, M.width)
